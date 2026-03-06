@@ -1,0 +1,38 @@
+{
+  "name": "saas-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "start": "bun src/server.ts",
+    "generate": "bun x drizzle-kit generate",
+    "migrate": "bun x drizzle-kit push",
+    "lint": "bun x eslint . --ext .ts",
+    "format": "bun x prettier . --write",
+    "typecheck": "bun x tsc --noEmit"
+  },
+  "dependencies": {
+    "@elysiajs/cookie": "0.8.0",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.30.10",
+    "elysia": "^1.1.13",
+    "jose": "^5.2.3",
+    "pg": "^8.11.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "bun-types": "latest",
+    "drizzle-kit": "^0.20.17",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.2"
+  }
+}

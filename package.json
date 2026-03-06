@@ -1,0 +1,15 @@
+{
+  "name": "invite-saas",
+  "private": true,
+  "packageManager": "bun@1.1.0",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "be:dev": "cd packages/be && bun run dev",
+    "be:start": "cd packages/be && bun run start",
+    "be:lint": "cd packages/be && bun run lint",
+    "be:format": "cd packages/be && bun run format",
+    "be:typecheck": "cd packages/be && bun run typecheck",
+    "be:migrate": "cd packages/be && bun run migrate",
+    "be:generate": "cd packages/be && bun run generate"
+  }
+}

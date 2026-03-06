@@ -1,0 +1,9 @@
+node_modules
+bun.lockb
+.env
+.drizzle
+.drizzle-kit
+.drizzle
+drizzle
+.DS_Store
+dist

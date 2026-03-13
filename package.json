@@ -1,15 +1,13 @@
 {
   "name": "invite-saas",
   "private": true,
-  "packageManager": "bun@1.1.0",
   "workspaces": ["packages/*"],
   "scripts": {
-    "be:dev": "cd packages/be && bun run dev",
-    "be:start": "cd packages/be && bun run start",
-    "be:lint": "cd packages/be && bun run lint",
-    "be:format": "cd packages/be && bun run format",
-    "be:typecheck": "cd packages/be && bun run typecheck",
-    "be:migrate": "cd packages/be && bun run migrate",
-    "be:generate": "cd packages/be && bun run generate"
+    "be:dev": "bun run --cwd packages/be dev",
+    "be:lint": "bun run --cwd packages/be lint",
+    "be:format": "bun run --cwd packages/be format",
+    "be:typecheck": "bun run --cwd packages/be typecheck",
+    "be:migrate": "bun run --cwd packages/be db:migrate",
+    "be:generate": "bun run --cwd packages/be db:generate"
   }
 }

@@ -22,6 +22,7 @@
     "drizzle-orm": "0.45.1",
     "elysia": "1.4.27",
     "postgres": "3.4.8",
+    "stripe": "17.7.0",
     "zod": "4.3.6"
   },
   "devDependencies": {

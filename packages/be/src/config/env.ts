@@ -8,6 +8,9 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z.url(),
   GOOGLE_CLIENT_ID: z.string().transform((v) => v || undefined).optional(),
   GOOGLE_CLIENT_SECRET: z.string().transform((v) => v || undefined).optional(),
+  STRIPE_SECRET_KEY: z.string().transform((v) => v || undefined).optional(),
+  STRIPE_PUBLISHABLE_KEY: z.string().transform((v) => v || undefined).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().transform((v) => v || undefined).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

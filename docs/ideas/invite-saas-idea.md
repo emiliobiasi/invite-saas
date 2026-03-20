@@ -1,295 +1,126 @@
-# 📋 InviteFlow — Requisitos do Projeto (MVP)
+# InviteFlow — A ideia
 
-> SaaS de convites digitais para eventos. O organizador cria um evento com página personalizada
-e compartilha o link. O convidado abre a página e confirma presença com um clique — sem
-preencher nada, sem criar conta.
-> 
+> Pense no Apple Invites, mas aberto para todo mundo.
 
 ---
 
-## Visão Geral
+## O problema
 
-**Problema resolvido:** Organizadores improvisam convites com arte no Canva, confirmação pelo
-WhatsApp e headcount na cabeça. Não existe um lugar que centralize convite bonito + RSVP simples.
-
-**Solução:** Uma página viva por evento. O organizador configura, compartilha o link, e os
-convidados confirmam com um clique. O organizador acompanha o contador em tempo real.
-
-**Hipótese que o MVP valida:** As pessoas usam um convite digital e confirmam presença por ele?
-
-**Público-alvo MVP:** Festas universitárias, aniversários, eventos privados e confraternizações.
+Quem organiza um evento hoje improvisa: faz uma arte no Canva, manda no WhatsApp, pergunta um por um quem vai, e conta na cabeça. Não existe um lugar simples que junte convite bonito + confirmação de presença sem fricção.
 
 ---
 
-## Fluxo Central
+## A solução
+
+O InviteFlow é uma plataforma web onde qualquer pessoa cria uma página de convite personalizada para seu evento, publica e compartilha o link. Do outro lado, o convidado abre o link, vê todas as informações do evento e confirma presença sem precisar criar conta, fazer login ou preencher formulário nenhum.
+
+---
+
+## Como funciona
+
+### Lado do organizador
+
+1. **Cria uma conta** — email/senha ou Google
+2. **Cria o evento** — coloca título, data, horário, local e descrição
+3. **Personaliza a página do convite** com:
+   - Uma imagem de fundo (background)
+   - Título e mensagem de destaque
+   - Cores personalizadas
+   - Um carrossel de fotos / mini álbum do evento
+   - Links customizados (Instagram, site, o que quiser — até 10)
+   - Vídeos do YouTube (playlist, teaser, o que fizer sentido — até 10)
+4. **Publica** — o convite ganha um link público
+5. **Compartilha** o link por WhatsApp, Instagram, email, onde quiser
+6. **Acompanha** o contador de respostas: quantos vão, quantos não vão, quantos estão em dúvida
+
+### Lado do convidado
+
+1. **Recebe o link** do convite
+2. **Abre a página** — vê tudo: foto de capa, informações do evento, fotos, links, vídeos
+3. **Responde** com um clique: **Vou** / **Não vou** / **Talvez**
+4. Opcionalmente pode deixar o nome ou email — mas não é obrigado a preencher nada
+
+Sem login. Sem cadastro. Sem atrito.
+
+---
+
+## O que a página do convite tem
+
+A página pública do convite é o coração do produto. Ela é montada com as seções que o organizador configurou:
+
+- **Imagem de fundo** — a foto principal que dá o clima do evento
+- **Título do evento** — nome grande e visível
+- **Data, horário e local** — informações essenciais
+- **Mensagem do organizador** — um texto livre de boas-vindas ou descrição
+- **Carrossel de fotos** — um mini álbum com até 10 fotos, como se fosse uma galeria do evento
+- **Links** — seção de links livres (Instagram, site, formulário, o que o organizador quiser)
+- **Vídeos do YouTube** — vídeos incorporados, pode ser playlist, teaser, aftermovie
+- **Previsão do tempo** — componente opcional que mostra a previsão do tempo para a data, horário e local do evento (dados de API em tempo real)
+- **Mini mapa** — componente opcional com um pin no local do evento, mostrando ruas ao redor. Clicável para abrir no Google Maps ou Waze
+- **Botões de resposta** — Going / Not Going / Maybe (inspirado no Apple Invites). O organizador pode desativar se quiser uma página só informativa
+- **Contador de respostas** — mostra quantas pessoas confirmaram, quantas não vão e quantas estão em dúvida
+
+Todos esses componentes são opcionais. O organizador escolhe o que quer mostrar no convite. Os únicos elementos obrigatórios são as informações do evento (título, data, local) e o visual base (cores, background).
+
+---
+
+## Ciclo de vida do evento
 
 ```
-Organizador cria conta
-       ↓
-  Cria o evento
-       ↓
-  Personaliza a página do convite
-       ↓
-  Publica e compartilha o link
-       ↓
-Convidado abre a página
-       ↓
-  Clica em "Vou" — sem preencher nada
-       ↓
-Organizador vê o contador atualizar em tempo real
+RASCUNHO → PUBLICADO → ENCERRADO
 ```
 
----
-
-## Módulos e Features
-
----
-
-### 1. Autenticação (`/auth`)
-
-### 1.1 — Cadastro de Organizador
-
-**O QUE:** O organizador cria uma conta com nome, e-mail e senha ou login social do google
-
-**PORQUE:** O organizador é o único que precisa de identidade persistente no sistema.
-Convidados não têm conta — não têm nem cadastro.
-
-**COMO:**
-
-- `POST /auth/register` — recebe `{ name, email, password }`
-- Senha hasheada com Bun hash
-- Retorna `{ user }`
-- Validações: e-mail único, senha mínima de 8 caracteres
+- **Rascunho**: o organizador está montando o convite, a página ainda não existe publicamente
+- **Publicado**: o link está ativo, convidados podem ver e responder
+- **Encerrado**: a página continua visível mas não aceita mais respostas
 
 ---
 
-### 1.2 — Login
+## Referência visual
 
-**O QUE:** Organizador autenticado acessa rotas protegidas
+O Apple Invites (app nativo da Apple, exclusivo do ecossistema) é a principal referência de experiência. Ele permite criar convites visuais para eventos, com:
 
-**PORQUE:** Permite gerenciar eventos de forma segura entre sessões.
+- Imagem de capa marcante
+- Informações claras (data, hora, local)
+- Botões de resposta: Going / Not Going / Maybe
+- Contador de quem vai com avatares dos convidados
+- Clima visual rico e imersivo
 
-**COMO:**
-
-- `POST /auth/login` — recebe `{ email, password }`
-- Retorna `{ user }`
-
----
-
-### 1.3 — Perfil do Organizador
-
-**O QUE:** O organizador pode atualizar nome, e-mail e foto.
-
-**PORQUE:** O nome pode aparecer na página pública do evento.
-
-**COMO:**
-
-- `GET /users/me`
-- `PATCH /users/me` — atualiza `name`, `email`, `avatarUrl`
+A diferença é que o Apple Invites é fechado para o ecossistema Apple. O InviteFlow faz a mesma coisa, mas na web, aberto para qualquer pessoa usar.
 
 ---
 
-### 2. Eventos (`/events`)
+## Público-alvo
 
-> ⚠️ **Nota arquitetural:** Adicionar `modules/events/` — não consta na estrutura atual mas
-é a entidade central do sistema.
-> 
-
----
-
-### 2.1 — Criar Evento
-
-**O QUE:** O organizador cria um evento com as informações básicas.
-
-**PORQUE:** O evento é o contexto de tudo. É ele que vira a página pública do convite.
-
-**COMO:**
-
-- `POST /events` (autenticado)
-- Body:
-    
-    ```json
-    {  "title": "Festa de Formatura Medicina USP",  "description": "...",  "date": "2025-12-20T22:00:00Z",  "location": "Av. Paulista, 1000 — São Paulo"}
-    ```
-    
-- Gera `slug` único a partir do título (ex: `festa-formatura-medicina-usp`)
-- Status inicial: `DRAFT`
-
-**Schema:**
-
-```
-Event {
-  id:          uuid
-  userId:      uuid (FK → User)
-  title:       string
-  description: string?
-  date:        datetime
-  location:    string
-  slug:        string (único)
-  status:      DRAFT | ACTIVE | FINISHED
-  createdAt:   datetime
-  updatedAt:   datetime
-}
-```
+- Festas de aniversário
+- Formaturas
+- Confraternizações
+- Festas universitárias
+- Eventos privados em geral
+- Qualquer pessoa que quer um convite bonito sem complicação
 
 ---
 
-### 2.2 — Listar e Detalhar Eventos
+## A pergunta que o MVP responde
 
-**O QUE:** O organizador vê todos os seus eventos e o estado de cada um.
+> As pessoas usam um convite digital e confirmam presença por ele?
 
-**PORQUE:** Um organizador pode ter múltiplos eventos. Precisa navegar entre eles e ver o
-headcount de cada um.
-
-**COMO:**
-
-- `GET /events` — lista eventos do usuário autenticado, ordenado por `date DESC`
-- `GET /events/:id` — detalhes do evento + total de confirmações:
-    
-    ```json
-    { "confirmedCount": 287 }
-    ```
-    
+Tudo que não ajuda a responder essa pergunta fica para depois.
 
 ---
 
-### 2.3 — Editar Evento e Ciclo de Vida
+## O que NÃO está no MVP
 
-**O QUE:** O organizador edita os dados e controla o status do evento.
-
-**PORQUE:** O status define o que a página pública exibe e se aceita confirmações.
-
-**COMO:**
-
-- `PATCH /events/:id` — atualiza campos (só se `status != FINISHED`)
-- `PATCH /events/:id/status` — transições:
-    - `DRAFT → ACTIVE` — publica o evento, página fica acessível
-    - `ACTIVE → FINISHED` — encerra o evento, página para de aceitar confirmações
-
----
-
-### 2.4 — Personalizar o Convite (Template)
-
-**O QUE:** O organizador personaliza a aparência da página pública do evento.
-
-**PORQUE:** A personalização visual é o diferencial do produto. A página é o convite.
-
-**COMO:**
-
-- `POST /events/:id/template` — upsert (um template por evento)
-- Body:
-    
-    ```json
-    {  "headline": "Você está convidado 🎉",  "message": "Vai ser incrível, não perde!",  "coverImageUrl": "https://...",  "primaryColor": "#E63946",  "secondaryColor": "#1D3557"}
-    ```
-    
-
-clara: o botão "Vou".
-
-**COMO:**
-
-- Rota pública: `GET /events/public/:slug`
-- Retorna dados do evento + template personalizado + `confirmedCount`
-- `status = DRAFT` → 404
-- `status = FINISHED` → retorna a página sem o botão de confirmação, com mensagem de encerramento
-
----
-
-### 3.2 — Confirmação de Presença (RSVP)
-
-**O QUE:** O convidado confirma presença com um único clique. Sem preencher nada.
-
-**PORQUE:** Fricção zero é o objetivo. Qualquer campo a mais é uma desistência a mais.
-
-**COMO:**
-
-- `POST /rsvp/:slug` — rota pública, sem autenticação, sem body
-- Validações:
-    1. Evento existe e está `ACTIVE` → senão, rejeita
-    2. Cria um registro anônimo de `Confirmation` vinculado ao evento
-    3. Retorna `{ confirmedCount: 288 }` — contador atualizado
-
-**Schema:**
-
-```
-Confirmation {
-  id:          uuid
-  eventId:     uuid (FK → Event)
-  confirmedAt: datetime
-}
-```
-
-> Sem nome, sem e-mail, sem identidade. Cada clique vira uma linha na tabela.
-O organizador vê o número — não quem são as pessoas.
-> 
-
----
-
-### 4. Dashboard do Organizador
-
----
-
-### 4.1 — Contador de Confirmações
-
-**O QUE:** O organizador vê quantas pessoas confirmaram presença em cada evento.
-
-**PORQUE:** É a métrica central do MVP — headcount para planejamento do evento.
-
-**COMO:**
-
-- Embutido em `GET /events/:id`:
-    
-    ```json
-    { "confirmedCount": 287 }
-    ```
-    
-- Calculado com `COUNT(*)` na tabela `Confirmation` filtrado por `eventId`
-
----
-
-## Regras de Negócio
-
-| Regra | Descrição |
-| --- | --- |
-| Convidado sem conta | Nenhum dado é coletado do convidado — zero fricção |
-| Confirmação anônima | Cada clique em "Vou" gera um registro sem identificação pessoal |
-| Evento DRAFT | Página retorna 404; RSVP não é aceito |
-| Evento FINISHED | Página exibe encerramento; RSVP bloqueado |
-| Ownership | Organizador só acessa dados de seus próprios eventos |
-
----
-
-## Arquitetura de Dados
-
-```
-User (organizador)
- └── Event (1:N)
-      ├── InviteTemplate (1:1)
-      └── Confirmation (1:N) ← criada por cada clique em "Vou"
-```
-
----
-
-```
-
-```
-
----
-
-## O que NÃO está no MVP (backlog v2)
-
-- Coleta de nome/e-mail do convidado
 - QR Code e check-in de entrada
-- Botão "Não vou"
-- Controle de capacidade
-- Eventos fechados com allowlist
-- Envio de e-mail transacional
-- Editor visual de convite
+- Controle de capacidade (lotação máxima)
+- Eventos fechados com lista de convidados
+- Envio de email ou notificação automática
+- Editor visual drag-and-drop
 - Integração com Spotify
 - Venda de ingressos
-- Múltiplos organizadores
+- Múltiplos organizadores por evento
+- Templates reutilizáveis entre eventos
 
 ---
 
-*MVP com uma pergunta só: as pessoas usam o convite digital e confirmam presença por ele?
-Tudo que não responde essa pergunta é v2.*
+*Um link. Um clique. Confirmado.*

@@ -26,9 +26,12 @@ O InviteFlow é uma plataforma web onde qualquer pessoa cria uma página de conv
    - Uma imagem de fundo (background)
    - Título e mensagem de destaque
    - Cores personalizadas
-   - Um carrossel de fotos / mini álbum do evento
+   - Uma frase ou citação com autor (ex: "A little party never killed nobody" — The Great Gatsby)
+   - Um carrossel de fotos / mini álbum do evento (até 10 fotos)
    - Links customizados (Instagram, site, o que quiser — até 10)
-   - Vídeos do YouTube (playlist, teaser, o que fizer sentido — até 10)
+   - Vídeos do YouTube incorporados (playlist, teaser — até 10)
+   - Upload direto de vídeos (até 3 vídeos, 50 MB cada)
+   - Músicas do Spotify (tracks, álbuns ou playlists incorporados — até 5)
 4. **Publica** — o convite ganha um link público
 5. **Compartilha** o link por WhatsApp, Instagram, email, onde quiser
 6. **Acompanha** o contador de respostas: quantos vão, quantos não vão, quantos estão em dúvida
@@ -36,7 +39,7 @@ O InviteFlow é uma plataforma web onde qualquer pessoa cria uma página de conv
 ### Lado do convidado
 
 1. **Recebe o link** do convite
-2. **Abre a página** — vê tudo: foto de capa, informações do evento, fotos, links, vídeos
+2. **Abre a página** — vê tudo: "Hosted by" com o nome do organizador, foto de capa, informações do evento, fotos, vídeos, músicas, links
 3. **Responde** com um clique: **Vou** / **Não vou** / **Talvez**
 4. Opcionalmente pode deixar o nome ou email — mas não é obrigado a preencher nada
 
@@ -51,10 +54,14 @@ A página pública do convite é o coração do produto. Ela é montada com as s
 - **Imagem de fundo** — a foto principal que dá o clima do evento
 - **Título do evento** — nome grande e visível
 - **Data, horário e local** — informações essenciais
+- **"Hosted by"** — mostra o nome e foto do organizador, com a descrição do evento logo abaixo
 - **Mensagem do organizador** — um texto livre de boas-vindas ou descrição
-- **Carrossel de fotos** — um mini álbum com até 10 fotos, como se fosse uma galeria do evento
-- **Links** — seção de links livres (Instagram, site, formulário, o que o organizador quiser)
-- **Vídeos do YouTube** — vídeos incorporados, pode ser playlist, teaser, aftermovie
+- **Frase / Citação** — bloco estilizado com uma frase marcante e autor (ex: "A little party never killed nobody" — The Great Gatsby)
+- **Carrossel de fotos** — um mini álbum com até 10 fotos. Ao clicar, expande como galeria
+- **Links** — seção de links livres (Instagram, site, formulário, o que o organizador quiser — até 10)
+- **Vídeos do YouTube** — vídeos incorporados, pode ser playlist, teaser, aftermovie (até 10)
+- **Upload de vídeos** — vídeos enviados diretamente pelo organizador, sem depender do YouTube (até 3, max 50 MB)
+- **Músicas do Spotify** — player incorporado de tracks, álbuns ou playlists do Spotify (até 5)
 - **Previsão do tempo** — componente opcional que mostra a previsão do tempo para a data, horário e local do evento (dados de API em tempo real)
 - **Mini mapa** — componente opcional com um pin no local do evento, mostrando ruas ao redor. Clicável para abrir no Google Maps ou Waze
 - **Botões de resposta** — Going / Not Going / Maybe (inspirado no Apple Invites). O organizador pode desativar se quiser uma página só informativa
@@ -111,12 +118,13 @@ Tudo que não ajuda a responder essa pergunta fica para depois.
 
 ## O que NÃO está no MVP
 
+- Card de "Going" com avatares dos convidados (exige identidade/login do convidado)
 - QR Code e check-in de entrada
 - Controle de capacidade (lotação máxima)
 - Eventos fechados com lista de convidados
 - Envio de email ou notificação automática
 - Editor visual drag-and-drop
-- Integração com Spotify
+- Álbum compartilhado (convidados fazendo upload de fotos)
 - Venda de ingressos
 - Múltiplos organizadores por evento
 - Templates reutilizáveis entre eventos

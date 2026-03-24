@@ -116,10 +116,12 @@ Full event details including RSVP breakdown. Only the event owner can access.
   "updatedAt": "...",
   "rsvpCount": { "going": 42, "notGoing": 5, "maybe": 12 },
   "settings": { "showRsvp": true, "showWeather": false, "showMap": true },
-  "template": { "headline": "...", "message": "...", "backgroundUrl": "...", "primaryColor": "#E63946", "secondaryColor": "#1D3557" },
+  "template": { "headline": "...", "message": "...", "backgroundUrl": "...", "primaryColor": "#E63946", "secondaryColor": "#1D3557", "quoteText": "...", "quoteAuthor": "..." },
   "photos": [{ "id": "uuid", "url": "...", "order": 0 }],
   "links": [{ "id": "uuid", "label": "Instagram", "url": "https://...", "order": 0 }],
-  "videos": [{ "id": "uuid", "url": "https://youtube.com/...", "title": "Playlist", "order": 0 }]
+  "videos": [{ "id": "uuid", "url": "https://youtube.com/...", "title": "Playlist", "order": 0 }],
+  "uploadedVideos": [{ "id": "uuid", "url": "...", "title": "...", "order": 0 }],
+  "music": [{ "id": "uuid", "spotifyUrl": "https://open.spotify.com/...", "title": "...", "order": 0 }]
 }
 ```
 
@@ -145,7 +147,7 @@ Updates event fields. Only allowed when status is not `FINISHED`.
 
 ### DELETE /api/events/:id
 
-Deletes an event and all related data (settings, template, photos, links, videos, RSVPs).
+Deletes an event and all related data (settings, template, photos, links, videos, uploaded videos, music, RSVPs).
 Only allowed when status is `DRAFT`.
 
 **Response `204`:** No content.
@@ -190,7 +192,9 @@ One template per event. Upsert semantics (create or update).
   "message": "Vai ser incrível, não perde!",
   "backgroundUrl": "https://...",
   "primaryColor": "#E63946",
-  "secondaryColor": "#1D3557"
+  "secondaryColor": "#1D3557",
+  "quoteText": "A little party never killed nobody.",
+  "quoteAuthor": "The Great Gatsby"
 }
 ```
 
@@ -330,6 +334,67 @@ Manage YouTube video embeds on the invite page.
 
 ---
 
+## Uploaded Videos
+
+Direct video uploads by the organizer (not YouTube embeds).
+
+| Method | Route                                          | Auth | Description                |
+|--------|-------------------------------------------------|------|----------------------------|
+| POST   | /api/events/:id/uploaded-videos                 | Yes  | Upload a video             |
+| GET    | /api/events/:id/uploaded-videos                 | Yes  | List uploaded videos       |
+| PATCH  | /api/events/:id/uploaded-videos/:videoId        | Yes  | Update title/order         |
+| DELETE | /api/events/:id/uploaded-videos/:videoId        | Yes  | Delete an uploaded video   |
+
+### POST /api/events/:id/uploaded-videos
+
+**Request:** `multipart/form-data` with `file` field (video) and optional `title` field.
+
+**Constraints:**
+- Max file size: 50 MB
+- Accepted formats: MP4, WebM
+- Max 3 uploaded videos per event
+
+**Response `201`:**
+```json
+{
+  "id": "uuid",
+  "url": "https://storage.../video.mp4",
+  "title": "Our Last Year's Vibe",
+  "order": 0
+}
+```
+
+---
+
+## Music (Spotify)
+
+Manage Spotify embeds on the invite page (tracks, albums, playlists).
+
+| Method | Route                                | Auth | Description            |
+|--------|--------------------------------------|------|------------------------|
+| POST   | /api/events/:id/music                | Yes  | Add a Spotify embed    |
+| GET    | /api/events/:id/music                | Yes  | List music (ordered)   |
+| PATCH  | /api/events/:id/music/:musicId       | Yes  | Update music           |
+| DELETE | /api/events/:id/music/:musicId       | Yes  | Delete a music embed   |
+
+### POST /api/events/:id/music
+
+**Request body:**
+```json
+{
+  "spotifyUrl": "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
+  "title": "Party Playlist"
+}
+```
+
+**Constraints:**
+- Max 5 music embeds per event
+- URL must be a valid Spotify URL (open.spotify.com)
+
+**Response `201`:** Music object with `id`, `spotifyUrl`, `title`, `order`.
+
+---
+
 ## Public Page (No Auth)
 
 These endpoints are public — no authentication required.
@@ -359,6 +424,10 @@ Returns all data needed to render the public invite page.
     "status": "ACTIVE",
     "acceptingRsvp": true
   },
+  "host": {
+    "name": "João Silva",
+    "image": "https://..."
+  },
   "settings": {
     "showRsvp": true,
     "showWeather": true,
@@ -369,11 +438,15 @@ Returns all data needed to render the public invite page.
     "message": "Vai ser incrível!",
     "backgroundUrl": "https://...",
     "primaryColor": "#E63946",
-    "secondaryColor": "#1D3557"
+    "secondaryColor": "#1D3557",
+    "quoteText": "A little party never killed nobody.",
+    "quoteAuthor": "The Great Gatsby"
   },
   "photos": [{ "url": "...", "order": 0 }],
   "links": [{ "label": "Instagram", "url": "https://...", "order": 0 }],
   "videos": [{ "url": "https://youtube.com/...", "title": "Playlist", "order": 0 }],
+  "uploadedVideos": [{ "url": "...", "title": "...", "order": 0 }],
+  "music": [{ "spotifyUrl": "https://open.spotify.com/...", "title": "...", "order": 0 }],
   "rsvpCount": { "going": 42, "notGoing": 5, "maybe": 12 }
 }
 ```
@@ -381,7 +454,9 @@ Returns all data needed to render the public invite page.
 > Note: public endpoint does NOT expose event `id`, `userId`, or `slug` in the response.
 
 **Component visibility on public page:**
-- `photos`, `links`, `videos` — included in response only if records exist (presence-based)
+- `host` — always included (organizer `name` + `image` only, never email or id)
+- `template.quoteText` / `template.quoteAuthor` — included as part of template, rendered if `quoteText` has content (presence-based)
+- `photos`, `links`, `videos`, `uploadedVideos`, `music` — included in response only if records exist (presence-based)
 - `rsvpCount` — included only if `settings.showRsvp` is `true`
 - `acceptingRsvp` — `false` if event is FINISHED **or** if `settings.showRsvp` is `false`
 - `settings.showWeather` / `settings.showMap` — frontend reads these flags to render components

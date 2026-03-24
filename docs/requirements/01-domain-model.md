@@ -9,20 +9,23 @@
 ```
 User (organizer)
  └── Event (1:N)
-      ├── InviteTemplate (1:1) — visual customization (required)
-      ├── EventSettings (1:1)  — component visibility toggles
-      ├── EventPhoto (1:N)     — photo carousel, max 10 (optional, presence-based)
-      ├── EventLink (1:N)      — custom links, max 10 (optional, presence-based)
-      ├── EventVideo (1:N)     — YouTube embeds, max 10 (optional, presence-based)
-      └── RSVP (1:N)           — guest responses (optional, toggle via EventSettings)
+      ├── InviteTemplate (1:1)      — visual customization + quote (required)
+      ├── EventSettings (1:1)       — component visibility toggles
+      ├── EventPhoto (1:N)          — photo carousel, max 10 (optional, presence-based)
+      ├── EventLink (1:N)           — custom links, max 10 (optional, presence-based)
+      ├── EventVideo (1:N)          — YouTube embeds, max 10 (optional, presence-based)
+      ├── EventUploadedVideo (1:N)  — direct video uploads, max 3 (optional, presence-based)
+      ├── EventMusic (1:N)          — Spotify embeds, max 5 (optional, presence-based)
+      └── RSVP (1:N)               — guest responses (optional, toggle via EventSettings)
 ```
 
 ### Component visibility model
 
 Components fall into two categories:
 
-**Presence-based (no toggle needed):** Photos, Links, Videos — if records exist, the section
-renders on the public page. If none exist, the section is hidden. The CRUD lifecycle IS the config.
+**Presence-based (no toggle needed):** Photos, Links, YouTube Videos, Uploaded Videos, Music,
+Quote (in template) — if records/content exist, the section renders on the public page.
+If none exist, the section is hidden. The CRUD lifecycle IS the config.
 
 **Toggle-based (controlled by EventSettings):** RSVP, Weather, Map — these are either enabled
 or disabled by the organizer, independent of whether data exists.
@@ -44,6 +47,10 @@ Managed by Better Auth. No custom fields beyond what Better Auth provides.
 | image         | string?  | avatar URL               |
 | createdAt     | datetime | auto                     |
 | updatedAt     | datetime | auto                     |
+
+**Public page exposure:**
+- The public invite page shows a "Hosted by" section with the organizer's `name` and `image`
+- Only `name` and `image` are exposed — `email`, `id`, and other fields are never public
 
 ---
 
@@ -94,8 +101,15 @@ Visual customization for the event's public page. One per event (1:1).
 | backgroundUrl  | string? | URL to background image        |
 | primaryColor   | string  | hex color, default `"#E63946"` |
 | secondaryColor | string  | hex color, default `"#1D3557"` |
+| quoteText      | string? | max 500 chars                  |
+| quoteAuthor    | string? | max 100 chars                  |
 | createdAt      | datetime| auto                           |
 | updatedAt      | datetime| auto                           |
+
+**Quote component:**
+- Renders as a styled citation block on the public page
+- Visibility is presence-based: if `quoteText` has content, the block renders
+- `quoteAuthor` is optional — the quote can appear without attribution
 
 ---
 
@@ -154,6 +168,46 @@ YouTube video embeds for the invite page.
 
 ---
 
+### EventUploadedVideo
+
+Direct video uploads by the organizer (not YouTube embeds).
+
+| Field    | Type     | Constraints                 |
+|----------|----------|-----------------------------|
+| id       | uuid     | PK                          |
+| eventId  | uuid     | FK → Event, required        |
+| url      | string   | required, stored file URL   |
+| title    | string?  | max 200 chars               |
+| order    | integer  | display order, default 0    |
+| createdAt| datetime | auto                        |
+
+**Constraints:**
+- Max 3 uploaded videos per event
+- Max file size: 50 MB
+- Accepted formats: MP4, WebM
+- Organizer uploads the file; backend stores and returns the URL
+
+---
+
+### EventMusic
+
+Spotify embeds for the invite page (tracks, albums, or playlists).
+
+| Field      | Type     | Constraints                    |
+|------------|----------|--------------------------------|
+| id         | uuid     | PK                             |
+| eventId    | uuid     | FK → Event, required           |
+| spotifyUrl | string   | required, valid Spotify URL    |
+| title      | string?  | max 200 chars                  |
+| order      | integer  | display order, default 0       |
+| createdAt  | datetime | auto                           |
+
+**Constraints:**
+- Max 5 music embeds per event
+- URL must be a valid Spotify URL (open.spotify.com)
+
+---
+
 ### EventSettings
 
 Display configuration for the event's public page. Controls which optional components are visible.
@@ -170,7 +224,7 @@ One per event (1:1). Created automatically when an event is created.
 | updatedAt   | datetime| auto                            |
 
 **Notes:**
-- Photos, Links, and Videos do NOT have toggles — their visibility is presence-based
+- Photos, Links, YouTube Videos, Uploaded Videos, Music, and Quote do NOT have toggles — their visibility is presence-based
 - `showWeather`: when enabled, the public page fetches and displays a weather forecast
   for the event's date, time, and location via an external weather API (real-time)
 - `showMap`: when enabled, the public page renders an interactive mini map with a pin

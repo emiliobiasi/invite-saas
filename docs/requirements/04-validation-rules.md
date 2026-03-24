@@ -39,6 +39,8 @@ Same fields as create, but all optional. At least one field must be provided.
 | backgroundUrl  | string | no       | valid URL format                  |
 | primaryColor   | string | no       | valid hex color (`#RRGGBB`)       |
 | secondaryColor | string | no       | valid hex color (`#RRGGBB`)       |
+| quoteText      | string | no       | max 500 chars, trimmed            |
+| quoteAuthor    | string | no       | max 100 chars, trimmed            |
 
 ---
 
@@ -109,6 +111,47 @@ At least one field must be provided.
 | url   | string | no       | valid YouTube URL (youtube.com/watch or youtu.be)  |
 | title | string | no       | max 200 chars                                      |
 | order | integer| no       | >= 0                                               |
+
+At least one field must be provided.
+
+---
+
+## Uploaded Videos
+
+### Upload Video (`POST /api/events/:id/uploaded-videos`)
+
+| Field | Type   | Required | Constraints                          |
+|-------|--------|----------|--------------------------------------|
+| file  | file   | yes      | max 50 MB, mime: video/mp4, video/webm |
+| title | string | no       | max 200 chars, trimmed               |
+
+### Update Uploaded Video (`PATCH /api/events/:id/uploaded-videos/:videoId`)
+
+| Field | Type    | Required | Constraints      |
+|-------|---------|----------|------------------|
+| title | string  | no       | max 200 chars    |
+| order | integer | no       | >= 0             |
+
+At least one field must be provided.
+
+---
+
+## Music (Spotify)
+
+### Create Music (`POST /api/events/:id/music`)
+
+| Field      | Type   | Required | Constraints                                        |
+|------------|--------|----------|----------------------------------------------------|
+| spotifyUrl | string | yes      | valid Spotify URL (open.spotify.com)               |
+| title      | string | no       | max 200 chars                                      |
+
+### Update Music (`PATCH /api/events/:id/music/:musicId`)
+
+| Field      | Type    | Required | Constraints                                        |
+|------------|---------|----------|----------------------------------------------------|
+| spotifyUrl | string  | no       | valid Spotify URL (open.spotify.com)               |
+| title      | string  | no       | max 200 chars                                      |
+| order      | integer | no       | >= 0                                               |
 
 At least one field must be provided.
 

@@ -38,7 +38,7 @@ The organizer can only access their own events (ownership enforcement).
 
 | Method | Route                     | Auth | Description                    |
 |--------|---------------------------|------|--------------------------------|
-| PATCH  | /api/events/:id/publish   | Yes  | DRAFT → ACTIVE                 |
+| PATCH  | /api/events/:id/publish   | Yes  | DRAFT → ACTIVE (requires payment) |
 | PATCH  | /api/events/:id/finish    | Yes  | ACTIVE → FINISHED              |
 
 ---
@@ -161,8 +161,12 @@ Transitions event from `DRAFT` to `ACTIVE`. The public page becomes accessible.
 **Preconditions:**
 - Event must be in `DRAFT` status
 - Event must have at least: title, date, location
+- Event must have a completed payment (`EventPurchase.status = COMPLETED`)
 
-**Response `200`:** Updated event with `status: "ACTIVE"`.
+**Response `200`:** Updated event with `status: "ACTIVE"`, `publishedAt`, `expiresAt`.
+
+**Errors:**
+- `402` — Payment not completed for this event
 
 ---
 
@@ -265,6 +269,7 @@ Upload and manage photos for the event carousel.
 - Max file size: 5 MB
 - Accepted formats: JPEG, PNG, WebP
 - Max 10 photos per event
+- **Requires photos add-on** — returns `403 FEATURE_NOT_PURCHASED` if `EventFeatures.photosEnabled` is `false`
 
 **Response `201`:**
 ```json
@@ -352,7 +357,8 @@ Direct video uploads by the organizer (not YouTube embeds).
 **Constraints:**
 - Max file size: 50 MB
 - Accepted formats: MP4, WebM
-- Max 3 uploaded videos per event
+- Max 1 uploaded video per event
+- **Requires video add-on** — returns `403 FEATURE_NOT_PURCHASED` if `EventFeatures.videoEnabled` is `false`
 
 **Response `201`:**
 ```json
@@ -412,6 +418,8 @@ Returns all data needed to render the public invite page.
 - `DRAFT` → `404 Not Found`
 - `ACTIVE` → Full event data + template + settings + optional sections + RSVP counts + `acceptingRsvp: true`
 - `FINISHED` → Same data but `acceptingRsvp: false`
+- `ARCHIVED` → `404 Not Found` (invite expired)
+- If `expiresAt` is in the past → `404 Not Found` (even if status not yet updated to ARCHIVED)
 
 **Response `200`:**
 ```json

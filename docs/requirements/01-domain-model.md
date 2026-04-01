@@ -11,12 +11,14 @@ User (organizer)
  └── Event (1:N)
       ├── InviteTemplate (1:1)      — visual customization + quote (required)
       ├── EventSettings (1:1)       — component visibility toggles
-      ├── EventPhoto (1:N)          — photo carousel, max 10 (optional, presence-based)
-      ├── EventLink (1:N)           — custom links, max 10 (optional, presence-based)
-      ├── EventVideo (1:N)          — YouTube embeds, max 10 (optional, presence-based)
-      ├── EventUploadedVideo (1:N)  — direct video uploads, max 3 (optional, presence-based)
-      ├── EventMusic (1:N)          — Spotify embeds, max 5 (optional, presence-based)
-      └── RSVP (1:N)               — guest responses (optional, toggle via EventSettings)
+      ├── EventPurchase (1:1)       — payment record (Stripe checkout)
+      ├── EventFeatures (1:1)       — purchased add-on features
+      ├── EventPhoto (1:N)          — photo carousel, max 10 (requires photos add-on)
+      ├── EventLink (1:N)           — custom links, max 10 (included in base)
+      ├── EventVideo (1:N)          — YouTube embeds, max 10 (included in base)
+      ├── EventUploadedVideo (1:N)  — direct video uploads, max 1 (requires video add-on)
+      ├── EventMusic (1:N)          — Spotify embeds, max 5 (included in base)
+      └── RSVP (1:N)               — guest responses (toggle via EventSettings)
 ```
 
 ### Component visibility model
@@ -58,28 +60,44 @@ Managed by Better Auth. No custom fields beyond what Better Auth provides.
 
 The core entity. Represents a single event created by an organizer.
 
-| Field       | Type     | Constraints                          |
-|-------------|----------|--------------------------------------|
-| id          | uuid     | PK                                   |
-| userId      | uuid     | FK → User, required                  |
-| title       | string   | required, max 120 chars              |
-| description | string?  | max 2000 chars                       |
-| date        | datetime | required                             |
-| location    | string   | required, max 300 chars              |
-| slug        | string   | unique, auto-generated from title    |
-| status      | enum     | DRAFT / ACTIVE / FINISHED            |
-| createdAt   | datetime | auto                                 |
-| updatedAt   | datetime | auto                                 |
+| Field              | Type      | Constraints                          |
+|--------------------|-----------|--------------------------------------|
+| id                 | uuid      | PK                                   |
+| userId             | uuid      | FK → User, required                  |
+| title              | string    | required, max 120 chars              |
+| description        | string?   | max 2000 chars                       |
+| date               | datetime  | required                             |
+| location           | string    | required, max 300 chars              |
+| slug               | string    | unique, auto-generated from title    |
+| status             | enum      | DRAFT / ACTIVE / FINISHED / ARCHIVED |
+| planDuration       | enum?     | 1_MONTH / 3_MONTHS / 6_MONTHS       |
+| publishedAt        | datetime? | set when DRAFT → ACTIVE, immutable   |
+| expiresAt          | datetime? | publishedAt + planDuration, immutable|
+| postEventExpiresAt | datetime? | set when FINISHED, based on plan     |
+| createdAt          | datetime  | auto                                 |
+| updatedAt          | datetime  | auto                                 |
 
 **Status lifecycle:**
 
 ```
-DRAFT → ACTIVE → FINISHED
+DRAFT → ACTIVE → FINISHED → ARCHIVED
+                    │                ↑
+                    └────────────────┘ (auto on expiration)
 ```
 
 - `DRAFT`: event is being configured, public page returns 404
-- `ACTIVE`: public page is live, RSVPs are accepted
-- `FINISHED`: public page shows event as ended, RSVPs are blocked
+- `ACTIVE`: public page is live, RSVPs are accepted. Requires completed payment to enter this status.
+- `FINISHED`: organizer marked as ended, public page visible but RSVPs blocked
+- `ARCHIVED`: invite expired (auto-transition when `expiresAt` or `postEventExpiresAt` is reached), public page returns 404
+
+**Expiration rules:**
+- `publishedAt` is set once when status transitions to ACTIVE (immutable)
+- `expiresAt` = `publishedAt` + `planDuration` — the invite page goes offline after this date
+- `postEventExpiresAt` is set when status transitions to FINISHED:
+  - 1_MONTH plan → event.date + 7 days
+  - 3_MONTHS plan → event.date + 30 days
+  - 6_MONTHS plan → event.date + 60 days
+- When either `expiresAt` or `postEventExpiresAt` is reached, status auto-transitions to ARCHIVED
 
 **Slug generation:**
 - Derived from title: lowercase, accents stripped, spaces to hyphens
@@ -128,6 +146,7 @@ Photos for the event carousel/mini album.
 **Constraints:**
 - Max 10 photos per event
 - Organizer uploads the file; backend stores and returns the URL
+- **Requires photos add-on** — upload is blocked if `EventFeatures.photosEnabled` is `false`
 
 ---
 
@@ -182,10 +201,11 @@ Direct video uploads by the organizer (not YouTube embeds).
 | createdAt| datetime | auto                        |
 
 **Constraints:**
-- Max 3 uploaded videos per event
+- Max 1 uploaded video per event
 - Max file size: 50 MB
 - Accepted formats: MP4, WebM
 - Organizer uploads the file; backend stores and returns the URL
+- **Requires video add-on** — upload is blocked if `EventFeatures.videoEnabled` is `false`
 
 ---
 
@@ -226,9 +246,65 @@ One per event (1:1). Created automatically when an event is created.
 **Notes:**
 - Photos, Links, YouTube Videos, Uploaded Videos, Music, and Quote do NOT have toggles — their visibility is presence-based
 - `showWeather`: when enabled, the public page fetches and displays a weather forecast
-  for the event's date, time, and location via an external weather API (real-time)
+  for the event's date, time, and location via an external weather API (real-time).
+  **Requires weather add-on** — toggle is rejected if `EventFeatures.weatherEnabled` is `false`.
 - `showMap`: when enabled, the public page renders an interactive mini map with a pin
   on the event location. Clickable to open in Google Maps or Waze.
+  **Requires map add-on** — toggle is rejected if `EventFeatures.mapEnabled` is `false`.
+
+---
+
+### EventPurchase
+
+Payment record linking an event to a Stripe checkout session. One per event (1:1).
+Created when the organizer completes payment to publish the event.
+
+| Field                | Type     | Constraints                                 |
+|----------------------|----------|---------------------------------------------|
+| id                   | uuid     | PK                                          |
+| eventId              | uuid     | FK → Event, unique (1:1)                    |
+| userId               | uuid     | FK → User, required                         |
+| stripeSessionId      | string   | Stripe Checkout Session ID                  |
+| stripePaymentIntentId| string?  | Stripe PaymentIntent ID (set via webhook)   |
+| basePlan             | enum     | 1_MONTH / 3_MONTHS / 6_MONTHS              |
+| addons               | string[] | e.g. `["photos", "video", "weather", "map"]`|
+| totalAmount          | integer  | total in cents (BRL)                        |
+| currency             | string   | default `"brl"`                             |
+| status               | enum     | PENDING / COMPLETED / REFUNDED              |
+| createdAt            | datetime | auto                                        |
+| updatedAt            | datetime | auto                                        |
+
+**Notes:**
+- Created with status `PENDING` when Stripe checkout session is initiated
+- Transitions to `COMPLETED` when Stripe webhook confirms payment
+- The event only transitions to ACTIVE after purchase status is `COMPLETED`
+- `addons` stores the list of purchased add-on keys for auditing
+
+---
+
+### EventFeatures
+
+Tracks which paid features are enabled for this event. One per event (1:1).
+Created alongside EventPurchase after successful payment.
+
+| Field          | Type    | Constraints                           |
+|----------------|---------|---------------------------------------|
+| id             | uuid    | PK                                    |
+| eventId        | uuid    | FK → Event, unique (1:1)              |
+| photosEnabled  | boolean | default `false`, unlocks photo uploads|
+| photosLimit    | integer | `0` or `10`                           |
+| videoEnabled   | boolean | default `false`, unlocks video upload |
+| videoLimit     | integer | `0` or `1`                            |
+| weatherEnabled | boolean | default `false`, unlocks weather toggle|
+| mapEnabled     | boolean | default `false`, unlocks map toggle   |
+| createdAt      | datetime| auto                                  |
+
+**Notes:**
+- Feature flags gate access to paid components at the API level
+- Attempting to upload photos without `photosEnabled = true` returns `403`
+- Attempting to upload video without `videoEnabled = true` returns `403`
+- Attempting to enable `showWeather` without `weatherEnabled = true` returns `403`
+- Attempting to enable `showMap` without `mapEnabled = true` returns `403`
 
 ---
 

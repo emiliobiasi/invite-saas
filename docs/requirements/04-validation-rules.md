@@ -51,8 +51,8 @@ Same fields as create, but all optional. At least one field must be provided.
 | Field       | Type    | Required | Constraints |
 |-------------|---------|----------|-------------|
 | showRsvp    | boolean | no       | —           |
-| showWeather | boolean | no       | —           |
-| showMap     | boolean | no       | —           |
+| showWeather | boolean | no       | requires `EventFeatures.weatherEnabled = true` to set to `true` |
+| showMap     | boolean | no       | requires `EventFeatures.mapEnabled = true` to set to `true` |
 
 At least one field must be provided.
 
@@ -64,7 +64,7 @@ At least one field must be provided.
 
 | Field | Type | Required | Constraints                          |
 |-------|------|----------|--------------------------------------|
-| file  | file | yes      | max 5 MB, mime: image/jpeg, image/png, image/webp |
+| file  | file | yes      | max 5 MB, mime: image/jpeg, image/png, image/webp. Requires `EventFeatures.photosEnabled = true` |
 
 ### Update Photo (`PATCH /api/events/:id/photos/:photoId`)
 
@@ -122,7 +122,7 @@ At least one field must be provided.
 
 | Field | Type   | Required | Constraints                          |
 |-------|--------|----------|--------------------------------------|
-| file  | file   | yes      | max 50 MB, mime: video/mp4, video/webm |
+| file  | file   | yes      | max 50 MB, mime: video/mp4, video/webm. Requires `EventFeatures.videoEnabled = true` |
 | title | string | no       | max 200 chars, trimmed               |
 
 ### Update Uploaded Video (`PATCH /api/events/:id/uploaded-videos/:videoId`)
@@ -190,9 +190,36 @@ All validation errors return `422` with a consistent shape:
 
 | HTTP Status | Error Code       | When                                    |
 |-------------|------------------|-----------------------------------------|
-| 400         | BAD_REQUEST      | Invalid status transition, event closed |
-| 401         | UNAUTHORIZED     | Missing or invalid session              |
-| 403         | FORBIDDEN        | Accessing another user's resource / RSVP disabled |
-| 404         | NOT_FOUND        | Resource does not exist                 |
-| 409         | CONFLICT         | Duplicate slug (retry with new suffix)  |
-| 422         | VALIDATION_ERROR | Input validation failure                |
+| 400         | BAD_REQUEST            | Invalid status transition, event closed      |
+| 401         | UNAUTHORIZED           | Missing or invalid session                   |
+| 402         | PAYMENT_REQUIRED       | Event requires payment before this action    |
+| 403         | FORBIDDEN              | Accessing another user's resource / RSVP disabled |
+| 403         | FEATURE_NOT_PURCHASED  | Paid feature not purchased for this event    |
+| 404         | NOT_FOUND              | Resource does not exist                      |
+| 409         | CONFLICT               | Duplicate slug (retry with new suffix)       |
+| 410         | EVENT_EXPIRED          | Event has expired and is archived            |
+| 422         | VALIDATION_ERROR       | Input validation failure                     |
+| 503         | STRIPE_NOT_CONFIGURED  | Stripe is not configured on the server       |
+
+---
+
+## Stripe Checkout
+
+### Create Checkout Session (`POST /api/stripe/create-checkout`)
+
+| Field        | Type   | Required | Constraints                                          |
+|--------------|--------|----------|------------------------------------------------------|
+| eventId      | uuid   | yes      | valid Event ID owned by authenticated user           |
+| planDuration | enum   | yes      | `"1_MONTH"`, `"3_MONTHS"`, `"6_MONTHS"`             |
+| addons       | object | yes      | `{ photos: bool, video: bool, weather: bool, map: bool }` |
+| successUrl   | string | yes      | valid URL for redirect after payment                 |
+| cancelUrl    | string | yes      | valid URL for redirect on cancel                     |
+
+### Checkout Preconditions
+
+| Condition | Error |
+|-----------|-------|
+| Event must exist and belong to authenticated user | 403 FORBIDDEN |
+| Event must be in DRAFT status | 400 BAD_REQUEST |
+| Event must not already have a COMPLETED purchase | 400 BAD_REQUEST |
+| Stripe must be configured | 503 STRIPE_NOT_CONFIGURED |
